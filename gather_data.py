@@ -32,6 +32,27 @@ if __name__ == "__main__":
         except:
             return False
 
+    def make_descriptive(row):
+        '''Given a tuple of string values, decodes and casts values to proper type'''
+        genders = ['female', 'male']
+        match = [True, False]
+        races = [
+            'Black/African American', 
+            'European/Caucasian-American', 
+            'Latino/Hispanic American', 
+            'Asian/Pacific Islander/Asian-American', 
+            'Native American', 
+            'Other',
+        ]
+        gender = genders[int(row[0])]
+        matched = match[int(row[1])]
+        correlation = float(row[2])
+        age = int(row[3])
+        age_o = int(row[4])
+        race = races[int(row[5])]
+        race_o = races[int(row[6])]
+        return (gender, matched, correlation, age, age_o, race, race_o)
+
     sc = SparkContext(appName="MySparkProg")
     sc.setLogLevel("ERROR")
 
@@ -49,6 +70,12 @@ if __name__ == "__main__":
 
     # Clean the data
     splitdata = splitdata.filter(check_valid)
+    
+    # Map data to correct types
+    descriptive_data = splitdata.map(make_descriptive)
+
+    for row in descriptive_data.take(5):
+        print(row)
     
     sc.stop()
 
