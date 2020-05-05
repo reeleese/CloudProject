@@ -9,3 +9,8 @@
 # Copy output to project directory
 rm /home/cc/project/processed_data.csv
 /usr/local/hadoop-1.2.1/bin/hadoop fs -get /project-output/part-00000 /home/cc/project/processed_data.csv
+
+# Add output to git and push
+git add ~/project/processed_data.csv
+git commit -m "auto commit by run.sh"
+git push
