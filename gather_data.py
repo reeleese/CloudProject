@@ -81,6 +81,9 @@ if __name__ == "__main__":
         valid_corr = lambda x: False if x < -1.0 or x > 1.0 else True
         valid_race = lambda x: x in range(1, 7)
 
+        # Skip header
+        if row[0] == 'gender':
+            return True
         try:
             if not valid_binary(int(row[0])):
                 return False
@@ -119,6 +122,11 @@ if __name__ == "__main__":
             'Native American', 
             'Other',
         ]
+        # Skip header
+        if row[0] == 'gender':
+            return row
+        
+        # Make descriptive
         gender = genders[int(row[0])]
         matched = match[int(row[1])]
         correlation = float(row[2])
@@ -134,8 +142,8 @@ if __name__ == "__main__":
 
     # Get data into RDD, toss header
     data = sc.textFile("hdfs://10.230.119.217:54310/project-input/speed_dating_data.csv")
-    header = data.first()
-    data = data.filter(lambda x: x != header)
+    # header = data.first()
+    # data = data.filter(lambda x: x != header)
 
     # Fix encoding
     data = data.map(lambda x: x.encode('ascii', 'ignore'))
