@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 
+import sys
 from csv import reader
 from pyspark import SparkContext
 
@@ -32,6 +33,13 @@ if __name__ == "__main__":
         except:
             return False
 
+    def check_valid_wrapper(row):
+        if check_valid(row):
+            return True
+        else:
+            print(row)
+            return False
+
     def make_descriptive(row):
         '''Given a tuple of string values, decodes and casts values to proper type'''
         genders = ['female', 'male']
@@ -49,8 +57,8 @@ if __name__ == "__main__":
         correlation = float(row[2])
         age = int(row[3])
         age_o = int(row[4])
-        race = races[int(row[5])]
-        race_o = races[int(row[6])]
+        race = races[int(row[5])-1]
+        race_o = races[int(row[6])-1]
         return (gender, matched, correlation, age, age_o, race, race_o)
 
     sc = SparkContext(appName="MySparkProg")
@@ -61,6 +69,9 @@ if __name__ == "__main__":
     header = data.first()
     data = data.filter(lambda x: x != header)
 
+    # Fix encoding
+    data = data.map(lambda x: x.encode('ascii', 'ignore'))
+
     # Make turn each row of comma seperated values into a list of values
     splitdata = data.mapPartitions(lambda x: reader(x))
     
@@ -69,13 +80,23 @@ if __name__ == "__main__":
     splitdata = splitdata.map(lambda x: (x[2], x[12], x[13], x[33], x[15], x[39], x[16]))
 
     # Clean the data
-    splitdata = splitdata.filter(check_valid)
+    print('Size of dataset before cleaning: {0}'.format(splitdata.count()))
+
+    # For getting the dirty rows
+    # for row in splitdata.collect():
+    #     check_valid_wrapper(row)
+    # sc.stop()
     
+    splitdata = splitdata.filter(check_valid)
+    print('Size of dataset after cleaning: {0}'.format(splitdata.count()))
+
     # Map data to correct types
     descriptive_data = splitdata.map(make_descriptive)
 
-    for row in descriptive_data.take(5):
-        print(row)
+    # Save result as csv
+    csv_ify = lambda row: ','.join(str(val) for val in row)
+    lines = descriptive_data.map(csv_ify)
+    lines.coalesce(1, shuffle=True).saveAsTextFile('hdfs://10.230.119.217:54310/project-output/')
     
     sc.stop()
 
