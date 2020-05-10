@@ -80,30 +80,35 @@ if __name__ == "__main__":
         valid_age = lambda x: False if x < 18 or x > 60 else True
         valid_corr = lambda x: False if x < -1.0 or x > 1.0 else True
         valid_race = lambda x: x in range(1, 7)
+        valid_one_out_of_ten = lambda x: x in range(1, 11)
 
         # Skip header
-        if row[0] == 'gender':
+        if row[0] == 'iid':
             return True
+        # Check each column value
         try:
-            if not valid_binary(int(row[0])):
-                return False
+            test = int(row[0]) # Just make sure iid is an int. try/catch will get this
             if not valid_binary(int(row[1])):
                 return False
-            if not valid_corr(float(row[2])):
+            if not valid_binary(int(row[2])):
                 return False
-            if not valid_age(int(row[3])):
+            if not valid_corr(float(row[3])):
                 return False
             if not valid_age(int(row[4])):
                 return False
-            if not valid_race(int(row[5])):
+            if not valid_age(int(row[5])):
                 return False
             if not valid_race(int(row[6])):
+                return False
+            if not valid_race(int(row[7])):
+                return False
+            if not valid_one_out_of_ten(int(row[8])):
                 return False
             return True
         except:
             return False
 
-    def check_valid_wrapper(row):
+    def print_dirty_data(row):
         if check_valid(row):
             return True
         else:
@@ -123,18 +128,20 @@ if __name__ == "__main__":
             'Other',
         ]
         # Skip header
-        if row[0] == 'gender':
+        if row[0] == 'iid':
             return row
         
         # Make descriptive
-        gender = genders[int(row[0])]
-        matched = match[int(row[1])]
-        correlation = float(row[2])
-        age = int(row[3])
-        age_o = int(row[4])
-        race = races[int(row[5])-1]
-        race_o = races[int(row[6])-1]
-        return (gender, matched, correlation, age, age_o, race, race_o)
+        iid = int(row[0])
+        gender = genders[int(row[1])]
+        matched = match[int(row[2])]
+        correlation = float(row[3])
+        age = int(row[4])
+        age_o = int(row[5])
+        race = races[int(row[6])-1]
+        race_o = races[int(row[7])-1]
+        imprace = int(row[8])
+        return (iid, gender, matched, correlation, age, age_o, race, race_o, imprace)
 
     # Set up spark
     sc = SparkContext(appName="MySparkProg")
@@ -153,8 +160,8 @@ if __name__ == "__main__":
     
     # Take only the data we want
     # gender=2, match=12, int_corr=13, age=33, age_o=15, race=39, race_o=16
-    columns_to_take = get_columns('gender', 'match', 'int_corr', 'age', 'age_o',
-                                  'race', 'race_o')
+    columns_to_take = get_columns('iid', 'gender', 'match', 'int_corr', 'age',
+                                  'age_o', 'race', 'race_o', 'imprace')
     splitdata = splitdata.map(lambda x: tuple(x[y] for y in columns_to_take))
 
     # Clean the data
