@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-import sys
+import numpy as np
 from csv import reader
 from pyspark import SparkContext
 
@@ -86,6 +86,7 @@ if __name__ == "__main__":
         if row[0] == 'iid':
             return True
         # Check each column value
+        ('552', '1', '0', '0.01', '25', '22', '2', '4', '1', '2', '8', '7', '7', '6', '7')
         try:
             test = int(row[0]) # Just make sure iid is an int. try/catch will get this
             if not valid_binary(int(row[1])):
@@ -104,6 +105,17 @@ if __name__ == "__main__":
                 return False
             if not valid_one_out_of_ten(int(row[8])):
                 return False
+            test = int(row[9]) if row[9] != '' else 0 # Just make sure you_call is an int. try/catch will get this
+            if not valid_one_out_of_ten(int(row[10])):
+                return False
+            if not valid_one_out_of_ten(int(row[11])):
+                return False
+            if not valid_one_out_of_ten(int(row[12])):
+                return False
+            if not valid_one_out_of_ten(int(row[13])):
+                return False
+            if not valid_one_out_of_ten(int(row[14])):
+                return False 
             return True
         except:
             return False
@@ -118,7 +130,7 @@ if __name__ == "__main__":
     def make_descriptive(row):
         '''Given a tuple of string values, decodes and casts values to proper type'''
         genders = ['female', 'male']
-        match = [True, False]
+        boolean = [True, False]
         races = [
             'Black/African American', 
             'European/Caucasian-American', 
@@ -134,14 +146,22 @@ if __name__ == "__main__":
         # Make descriptive
         iid = int(row[0])
         gender = genders[int(row[1])]
-        matched = match[int(row[2])]
+        matched = boolean[int(row[2])]
         correlation = float(row[3])
         age = int(row[4])
         age_o = int(row[5])
         race = races[int(row[6])-1]
         race_o = races[int(row[7])-1]
         imprace = int(row[8])
-        return (iid, gender, matched, correlation, age, age_o, race, race_o, imprace)
+        you_call = 0 if row[9] == '' else int(row[9])
+        attr3_1 = int(row[10])
+        sinc3_1 = int(row[11])
+        intel3_1 = int(row[12])
+        fun3_1 = int(row[13])
+        amb3_1 = int(row[14])
+        
+        return (iid, gender, matched, correlation, age, age_o, race, race_o,
+                imprace, you_call, attr3_1, sinc3_1, intel3_1, fun3_1, amb3_1)
 
     # Set up spark
     sc = SparkContext(appName="MySparkProg")
@@ -161,16 +181,17 @@ if __name__ == "__main__":
     # Take only the data we want
     # gender=2, match=12, int_corr=13, age=33, age_o=15, race=39, race_o=16
     columns_to_take = get_columns('iid', 'gender', 'match', 'int_corr', 'age',
-                                  'age_o', 'race', 'race_o', 'imprace')
+                                  'age_o', 'race', 'race_o', 'imprace',
+                                  'you_call', 'attr3_1', 'sinc3_1', 'intel3_1',
+                                  'fun3_1', 'amb3_1')
     splitdata = splitdata.map(lambda x: tuple(x[y] for y in columns_to_take))
-
-    # Clean the data
-    print('Size of dataset before cleaning: {0}'.format(splitdata.count()))
-    # For getting the dirty rows
-    # for row in splitdata.take(5):
-    #     check_valid_wrapper(row)
-    # sc.stop()
     
+    # For getting the dirty rows
+    # for row in splitdata.collect():
+    #    print_dirty_data(row)
+    # sc.stop()
+
+    print('Size of dataset before cleaning: {0}'.format(splitdata.count()))
     splitdata = splitdata.filter(check_valid)
     print('Size of dataset after cleaning: {0}'.format(splitdata.count()))
 
